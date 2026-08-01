@@ -1,5 +1,7 @@
 import re
 
+OPERADORES = {"|", ".", "*", "+", "?"}
+
 def tokenizar(expresion): #Convertir una expresión en una lista de tokens
     tokens = []
     i = 0
@@ -47,4 +49,84 @@ def tokenizar(expresion): #Convertir una expresión en una lista de tokens
         i += 1
 
     return tokens
+
+def es_operando(token): #Indica si un token es un operando
+    if token in {"(", ")"}:
+        return False
+
+    if token in OPERADORES:
+        return False
+
+    return True
+
+def insertar_concatenacion(tokens): #Inserta el operador de concatenación entre los tokens que lo requieran
+    resultado = []
+
+    for i in range(len(tokens)-1):
+        actual = tokens[i]
+        siguiente = tokens[i+1]
+        resultado.append(actual)
+
+        izquierda = (
+            es_operando(actual)
+            or actual == ")"
+            or actual == "*"
+            or actual == "+"
+            or actual == "?"
+        )
+
+        derecha = (
+            es_operando(siguiente)
+            or siguiente == "("
+        )
+
+        if izquierda and derecha:
+            resultado.append(".")
+
+    resultado.append(tokens[-1])
+
+    return resultado
+
+def expandir_question(tokens): #Expande el operador de cero o una ocurrencia
+    resultado = []
+    i = 0
+
+    while i < len(tokens):
+        if i+1 < len(tokens) and tokens[i+1] == "?":
+            resultado.extend([
+                "(",
+                "ε",
+                "|",
+                tokens[i],
+                ")"
+            ])
+
+            i += 2
+
+        else:
+            resultado.append(tokens[i])
+            i += 1
+
+    return resultado
+
+def expandir_plus(tokens): #Expande el operador de una o más ocurrencias
+    resultado = []
+    i = 0
+
+    while i < len(tokens):
+        if i+1 < len(tokens) and tokens[i+1] == "+":
+            resultado.extend([
+                tokens[i],
+                ".",
+                tokens[i],
+                "*"
+            ])
+
+            i += 2
+
+        else:
+            resultado.append(tokens[i])
+            i += 1
+
+    return resultado
 
