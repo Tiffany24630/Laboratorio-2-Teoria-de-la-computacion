@@ -1,10 +1,15 @@
 from utils import tokenizar, expandir_plus, expandir_question, insertar_concatenacion
 from shunting_yard import shunting_yard
+from balanceador import balanceada
 
 def procesar(expresion): #Procesa una expresión regular y la convierte a notación postfix
     print("=" * 70)
     print("Expresión original:")
     print(expresion)
+
+    if not balanceada(expresion):
+        print("\nERROR: expresión no balanceada.")
+        return
 
     tokens = tokenizar(expresion)
 
@@ -26,7 +31,12 @@ def procesar(expresion): #Procesa una expresión regular y la convierte a notaci
     print("\nDespués de insertar concatenación:")
     print(tokens)
 
-    postfix = shunting_yard(tokens)
+    try:
+        postfix = shunting_yard(tokens)
+
+    except ValueError as e:
+        print("\nERROR:", e)
+        return
 
     print("\nPostfix:")
     print(" ".join(postfix))

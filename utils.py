@@ -5,8 +5,13 @@ OPERADORES = {"|", ".", "*", "+", "?"}
 def tokenizar(expresion): #Convertir una expresión en una lista de tokens
     tokens = []
     i = 0
+    expresion = expresion.replace("∗", "*")
 
     while i < len(expresion):
+        if expresion[i].isspace():
+            i += 1
+            continue
+
         c = expresion[i]
 
         if c == "\\":
@@ -60,19 +65,32 @@ def es_operando(token): #Indica si un token es un operando
     return True
 
 def insertar_concatenacion(tokens): #Inserta el operador de concatenación entre los tokens que lo requieran
+    OPERADORES = {"|", "*", "+", "?", "."}
+
+
+def es_operando(token):
+    return (
+        token not in OPERADORES
+        and token not in {"(", ")"}
+    )
+
+
+def insertar_concatenacion(tokens):
     resultado = []
 
-    for i in range(len(tokens)-1):
+    for i in range(len(tokens)):
         actual = tokens[i]
-        siguiente = tokens[i+1]
         resultado.append(actual)
+
+        if i == len(tokens) - 1:
+            continue
+
+        siguiente = tokens[i + 1]
 
         izquierda = (
             es_operando(actual)
             or actual == ")"
             or actual == "*"
-            or actual == "+"
-            or actual == "?"
         )
 
         derecha = (
@@ -82,8 +100,6 @@ def insertar_concatenacion(tokens): #Inserta el operador de concatenación entre
 
         if izquierda and derecha:
             resultado.append(".")
-
-    resultado.append(tokens[-1])
 
     return resultado
 

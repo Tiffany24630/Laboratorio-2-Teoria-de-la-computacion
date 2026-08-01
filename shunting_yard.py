@@ -39,8 +39,8 @@ def shunting_yard(tokens):
 
             pila.push(token)
 
-        print("Pila :", pila)
-        print("Salida:", salida)
+        print("Pila :", pila.items)
+        print("Salida:", " ".join(salida))
 
     while not pila.is_empty():
         salida.append(pila.pop())
