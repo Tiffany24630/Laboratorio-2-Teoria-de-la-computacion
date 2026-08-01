@@ -1,8 +1,6 @@
-import re
-
 OPERADORES = {"|", ".", "*", "+", "?"}
 
-def tokenizar(expresion): #Convertir una expresión en una lista de tokens
+def tokenizar(expresion):
     tokens = []
     i = 0
     expresion = expresion.replace("∗", "*")
@@ -12,68 +10,44 @@ def tokenizar(expresion): #Convertir una expresión en una lista de tokens
             i += 1
             continue
 
-        c = expresion[i]
+        caracter = expresion[i]
 
-        if c == "\\":
-            if i + 1 < len(expresion):
-                tokens.append(expresion[i:i+2])
-                i += 2
+        if caracter == "\\":
+            if i + 1 >= len(expresion):
+                raise ValueError("Secuencia de escape incompleta.")
 
-                continue
+            tokens.append(expresion[i:i + 2])
+            i += 2
+            continue
 
-        if c == "[":
-            j = i
+        if caracter == "[":
+            j = i + 1
 
-            while j < len(expresion):
-                if expresion[j] == "]":
-                    break
-
+            while j < len(expresion) and expresion[j] != "]":
                 j += 1
 
-            tokens.append(expresion[i:j+1])
+            if j == len(expresion):
+                raise ValueError("Clase de caracteres '[' sin cerrar.")
+
+            tokens.append(expresion[i:j + 1])
             i = j + 1
-
             continue
 
-        if c.isalpha():
-            palabra = ""
-
-            while i < len(expresion):
-                if expresion[i].isalnum():
-                    palabra += expresion[i]
-                    i += 1
-
-                else:
-                    break
-
-            tokens.append(palabra)
-
+        if caracter.isalnum() or caracter == "ε":
+            tokens.append(caracter)
+            i += 1
             continue
 
-        tokens.append(c)
+        tokens.append(caracter)
         i += 1
 
     return tokens
-
-def es_operando(token): #Indica si un token es un operando
-    if token in {"(", ")"}:
-        return False
-
-    if token in OPERADORES:
-        return False
-
-    return True
-
-def insertar_concatenacion(tokens): #Inserta el operador de concatenación entre los tokens que lo requieran
-    OPERADORES = {"|", "*", "+", "?", "."}
-
 
 def es_operando(token):
     return (
         token not in OPERADORES
         and token not in {"(", ")"}
     )
-
 
 def insertar_concatenacion(tokens):
     resultado = []
@@ -89,8 +63,7 @@ def insertar_concatenacion(tokens):
 
         izquierda = (
             es_operando(actual)
-            or actual == ")"
-            or actual == "*"
+            or actual in {")", "*", "+", "?"}
         )
 
         derecha = (
@@ -103,7 +76,64 @@ def insertar_concatenacion(tokens):
 
     return resultado
 
-def expandir_question(tokens): #Expande el operador de cero o una ocurrencia
+def obtener_operando(tokens, indice):
+    fin = indice - 1
+
+    if fin < 0:
+        return [], 0
+
+    if tokens[fin] != ")":
+        return [tokens[fin]], fin
+
+    contador = 1
+    inicio = fin - 1
+
+    while inicio >= 0:
+
+        if tokens[inicio] == ")":
+            contador += 1
+
+        elif tokens[inicio] == "(":
+            contador -= 1
+
+            if contador == 0:
+                break
+
+        inicio -= 1
+
+    if contador != 0:
+        raise ValueError("Paréntesis desbalanceados.")
+
+    return tokens[inicio:fin + 1], inicio
+
+def expandir_plus(tokens):
+    resultado = []
+    i = 0
+
+    while i < len(tokens):
+
+        if tokens[i] != "+":
+            resultado.append(tokens[i])
+            i += 1
+            continue
+
+        if not resultado:
+            raise ValueError("Uso inválido del operador '+'.")
+
+        operando, inicio = obtener_operando(resultado, len(resultado))
+        resultado = resultado[:inicio]
+
+        resultado.extend(operando)
+        resultado.append(".")
+
+        resultado.extend(operando)
+        resultado.append("*")
+
+        i += 1
+
+    return resultado
+
+def expandir_question(tokens):
     resultado = []
     i = 0
 
@@ -112,6 +142,9 @@ def expandir_question(tokens): #Expande el operador de cero o una ocurrencia
             resultado.append(tokens[i])
             i += 1
             continue
+
+        if not resultado:
+            raise ValueError("Uso inválido del operador '?'.")
 
         operando, inicio = obtener_operando(resultado, len(resultado))
         resultado = resultado[:inicio]
@@ -128,54 +161,3 @@ def expandir_question(tokens): #Expande el operador de cero o una ocurrencia
         i += 1
 
     return resultado
-
-def expandir_plus(tokens): #Expande el operador de una o más ocurrencias
-    resultado = []
-    i = 0
-
-    while i < len(tokens):
-        if tokens[i] != "+":
-            resultado.append(tokens[i])
-
-            i += 1
-            continue
-
-        operando, inicio = obtener_operando(resultado, len(resultado))
-
-        resultado = resultado[:inicio]
-
-        resultado.extend(operando)
-        resultado.append(".")
-
-        resultado.extend(operando)
-        resultado.append("*")
-
-        i += 1
-
-    return resultado
-
-def obtener_operando(tokens, indice): #Obtiene el operando a la izquierda de un operador, considerando paréntesis
-    fin = indice - 1
-
-    if fin < 0:
-        return [], 0
-
-    if tokens[fin] != ")":
-        return [tokens[fin]], fin
-
-    contador = 1
-    inicio = fin - 1
-
-    while inicio >= 0:
-        if tokens[inicio] == ")":
-            contador += 1
-
-        elif tokens[inicio] == "(":
-            contador -= 1
-
-            if contador == 0:
-                break
-
-        inicio -= 1
-
-    return tokens[inicio:fin+1], inicio

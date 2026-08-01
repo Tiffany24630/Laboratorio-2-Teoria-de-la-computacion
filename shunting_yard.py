@@ -26,6 +26,9 @@ def shunting_yard(tokens):
             while not pila.is_empty() and pila.peek() != "(":
                 salida.append(pila.pop())
 
+            if pila.is_empty():
+                raise ValueError("Paréntesis ')' sin apertura.")
+
             pila.pop()
 
         else:
@@ -43,6 +46,9 @@ def shunting_yard(tokens):
         print("Salida:", " ".join(salida))
 
     while not pila.is_empty():
+        if pila.peek() == "(":
+            raise ValueError("Paréntesis '(' sin cerrar.")
+
         salida.append(pila.pop())
 
     return salida
