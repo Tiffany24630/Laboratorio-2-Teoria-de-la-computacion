@@ -92,20 +92,24 @@ def expandir_question(tokens): #Expande el operador de cero o una ocurrencia
     i = 0
 
     while i < len(tokens):
-        if i+1 < len(tokens) and tokens[i+1] == "?":
-            resultado.extend([
-                "(",
-                "ε",
-                "|",
-                tokens[i],
-                ")"
-            ])
-
-            i += 2
-
-        else:
+        if tokens[i] != "?":
             resultado.append(tokens[i])
             i += 1
+            continue
+
+        operando, inicio = obtener_operando(resultado, len(resultado))
+        resultado = resultado[:inicio]
+
+        resultado.extend([
+            "(",
+            "ε",
+            "|"
+        ])
+
+        resultado.extend(operando)
+        resultado.append(")")
+
+        i += 1
 
     return resultado
 
@@ -114,19 +118,48 @@ def expandir_plus(tokens): #Expande el operador de una o más ocurrencias
     i = 0
 
     while i < len(tokens):
-        if i+1 < len(tokens) and tokens[i+1] == "+":
-            resultado.extend([
-                tokens[i],
-                ".",
-                tokens[i],
-                "*"
-            ])
-
-            i += 2
-
-        else:
+        if tokens[i] != "+":
             resultado.append(tokens[i])
+
             i += 1
+            continue
+
+        operando, inicio = obtener_operando(resultado, len(resultado))
+
+        resultado = resultado[:inicio]
+
+        resultado.extend(operando)
+        resultado.append(".")
+
+        resultado.extend(operando)
+        resultado.append("*")
+
+        i += 1
 
     return resultado
 
+def obtener_operando(tokens, indice): #Obtiene el operando a la izquierda de un operador, considerando paréntesis
+    fin = indice - 1
+
+    if fin < 0:
+        return [], 0
+
+    if tokens[fin] != ")":
+        return [tokens[fin]], fin
+
+    contador = 1
+    inicio = fin - 1
+
+    while inicio >= 0:
+        if tokens[inicio] == ")":
+            contador += 1
+
+        elif tokens[inicio] == "(":
+            contador -= 1
+
+            if contador == 0:
+                break
+
+        inicio -= 1
+
+    return tokens[inicio:fin+1], inicio
